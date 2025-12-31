@@ -220,7 +220,3 @@ CO2_Emissions_MT    (float, metric tons)
 ## ✅ Status
 
 **Cleaning complete. Dataset is production-ready for Power BI.**
-
----
-
-tell me and I’ll add it cleanly.
