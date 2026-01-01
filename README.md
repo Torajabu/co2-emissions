@@ -287,7 +287,7 @@ RANKX (
 * **`fact_co2_emissions_countries.csv`**
   → Clean, aggregate-free fact table
 
-* **`dim_country.csv`** 
+* **`dim_country.csv`** *(optional)*
   → Country dimension for slicers & relationships
 
 * **`global_co2_emissions.pbix`**
@@ -301,16 +301,6 @@ RANKX (
 2. Use slicers to filter by country and year
 3. Navigate between **Overview** and **Country Profile**
 4. Explore trends, rankings, and geographic patterns
-
----
-
-## 🔮 Possible Extensions
-
-* Per-capita CO₂ emissions (merge population data)
-* YoY growth measures
-* Policy-era annotations
-* Region-level drilldowns
-* Tooltip detail pages
 
 ---
 
