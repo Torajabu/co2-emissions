@@ -5,8 +5,9 @@ This repository contains a **production-ready Power BI dashboard** and its **ful
 The project emphasizes **correct data modeling, cleaning logic, and analytics integrity** — not just visuals.
 
 ## Result
-![Result](https://github.com/Torajabu/co2-emissions/raw/main/Screenshot%202026-01-01%20134142.png)
 ![Dashboard View](https://github.com/Torajabu/co2-emissions/raw/main/Screenshot%202026-01-01%20134152.png)
+
+![Result](https://github.com/Torajabu/co2-emissions/raw/main/Screenshot%202026-01-01%20134142.png)
 
 ---
 
