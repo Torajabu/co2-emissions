@@ -303,6 +303,3 @@ RANKX (
 4. Explore trends, rankings, and geographic patterns
 
 ---
-
-
-Just say the w
