@@ -1,40 +1,43 @@
-# CO₂ Emissions (AR5) — Cleaned Dataset cleaning for Power BI
+# 🌍 Global CO₂ Emissions Analytics (Power BI)
 
-This repository contains a **cleaned and analysis-ready version** of the World Bank CO₂ emissions dataset, prepared specifically for **Power BI data modeling and dashboarding**.
+This repository contains a **production-ready Power BI dashboard** and its **fully documented data-cleaning pipeline**, built using **World Bank CO₂ emissions data (AR5)**.
 
-The raw World Bank download is **not directly suitable** for BI or analytics due to metadata rows, wide year columns, missing values, and aggregate regions mixed with real countries.
-This README documents **exactly how the data was cleaned** and why each step was necessary.
+The project emphasizes **correct data modeling, defensible cleaning logic, and analytics integrity** — not just visuals.
 
 ---
 
-## 📌 Data Source
+## 📌 Project Overview
 
+* **Domain:** Climate & Environmental Analytics
+* **BI Tool:** Power BI
+* **Data Source:** World Bank Open Data
 * **Indicator:** CO₂ emissions (metric tons, AR5)
-* **Indicator Code:** `EN.GHG.CO2.MT.CE.AR5`
-* **Source:** World Bank Open Data
-* **Download link:**
-  [https://data.worldbank.org/indicator/EN.GHG.CO2.MT.CE.AR5](https://data.worldbank.org/indicator/EN.GHG.CO2.MT.CE.AR5)
-* **Time range:** 1960–2023
-* **Format downloaded:** Excel (`.xls`)
+* **Granularity:** Country–Year
+* **Time Range:** 1960–2023
 
-The dataset was downloaded directly from the World Bank indicator page above using the **Download Data → Excel** option.
+### What the dashboard enables
+
+* Explore long-term global CO₂ trends
+* Identify top emitting countries
+* Analyze individual country emission profiles
+* Compare country emissions against global totals
+* Safely aggregate without double counting
 
 ---
 
-## 📂 Raw File Structure (World Bank Export)
+## 📂 Data Source
 
-The downloaded Excel file contains multiple sheets:
+* **Indicator code:** `EN.GHG.CO2.MT.CE.AR5`
+* **Official link:**
+  [https://data.worldbank.org/indicator/EN.GHG.CO2.MT.CE.AR5](https://data.worldbank.org/indicator/EN.GHG.CO2.MT.CE.AR5)
+* **Format downloaded:** Excel (`.xls`)
+* **Sheets used:**
 
-* `Data`
-* `Metadata - Countries`
-* `Metadata - Indicators`
+  * `Data`
+  * `Metadata - Countries`
+  * `Metadata - Indicators`
 
-Key issues in the raw export:
-
-* First rows contain **notes and metadata**, not data
-* One column per year (wide format)
-* Missing values represented as `..`
-* Includes **aggregate regions and income groups** (e.g., World, OECD, income groups)
+> ⚠️ The raw World Bank export is **not BI-ready**. It includes metadata rows, wide-format years, missing values, and aggregate regions mixed with countries.
 
 ---
 
@@ -44,16 +47,15 @@ Key issues in the raw export:
 * Ensure **correct numeric data types**
 * Remove **aggregate regions and income groups**
 * Retain **only real sovereign countries**
-* Produce a **stable fact table** for Power BI modeling
+* Produce a **stable, auditable fact table** for Power BI
 
 ---
 
-## 🧹 Data Cleaning Steps
+## 🧹 Data Cleaning Process (Documented & Reproducible)
 
-### 1️⃣ Load Data and Skip Metadata Rows
+### 1️⃣ Load Data & Skip Metadata Rows
 
-The `Data` sheet contains non-data rows at the top.
-These were skipped so that the header row is read correctly.
+The `Data` sheet contains non-data rows at the top. These were skipped so headers align correctly.
 
 ```python
 pd.read_excel(
@@ -67,19 +69,19 @@ pd.read_excel(
 
 ### 2️⃣ Remove Non-Analytical Columns
 
-The following columns were removed as they do not affect analysis:
+Dropped:
 
 * `Indicator Name`
 * `Indicator Code`
 
-These are constant across the dataset and unnecessary for BI modeling.
+These are constant across the dataset and unnecessary for modeling or analysis.
 
 ---
 
 ### 3️⃣ Reshape Data (Wide → Long)
 
-The raw data stores years as column names (e.g., `1960`, `1961`, …).
-This was reshaped into **one row per country per year**.
+Raw data stores each year as a separate column.
+This was reshaped to **one row per country per year**.
 
 ```python
 df.melt(
@@ -89,43 +91,43 @@ df.melt(
 )
 ```
 
-This step is essential for:
+**Why this matters**
 
-* Time-series analysis
-* Power BI measures
-* SQL-style aggregations
+* Enables time-series analysis
+* Supports DAX measures
+* Matches star-schema best practices
 
 ---
 
-### 4️⃣ Fix Data Types and Missing Values
+### 4️⃣ Fix Data Types & Missing Values
 
 * `Year` → integer
 * `CO2_Emissions_MT` → float
-* Invalid placeholders such as `..` were converted to `NaN`
+* Placeholder values (`..`) → `NaN`
 
 ```python
 pd.to_numeric(..., errors="coerce")
 ```
 
-This prevents silent errors in Power BI visuals and calculations.
+This prevents silent aggregation errors in Power BI.
 
 ---
 
-### 5️⃣ Remove Aggregate Regions and Income Groups
+### 5️⃣ Remove Aggregate Regions (Authoritative Method)
 
 World Bank exports include aggregates such as:
 
 * World (`WLD`)
-* Regional groupings (`AFE`, `ARB`, `CEB`)
+* Regions (`AFE`, `ARB`, `CEB`)
 * Income groups (`HIC`, `UMC`, `LMC`)
 
-These **must be removed** to avoid double counting and misleading totals.
+These **must be removed** to avoid double counting.
 
-#### Authoritative method used
+#### Source of truth used
 
-The `Metadata - Countries` sheet was used as the **source of truth**.
+The **`Metadata - Countries`** sheet.
 
-A row was kept **only if**:
+A country was kept **only if**:
 
 * `Region` is not null
 * `Region` ≠ `"Aggregates"`
@@ -137,15 +139,13 @@ real_countries = countries[
 ]
 ```
 
-This avoids unreliable heuristics such as:
-
-* Country name string matching
-* Country code length checks
-* Hard-coded exclusions
+✔ No heuristics
+✔ No string matching
+✔ Fully auditable
 
 ---
 
-### 6️⃣ Apply Country Filter to Emissions Data
+### 6️⃣ Apply Country Filter
 
 ```python
 df_final = df_long[
@@ -155,8 +155,8 @@ df_final = df_long[
 
 Result:
 
-* Only real sovereign countries remain
-* All global, regional, and income aggregates removed
+* Only sovereign countries remain
+* All aggregates removed safely
 
 ---
 
@@ -169,11 +169,11 @@ Result:
   ```
 * Confirmed ~210 unique countries
 * Ensured one row per country–year
-* Verified correct numeric data types
+* Verified numeric data types
 
 ---
 
-## 📊 Final Dataset Schema
+## 📊 Final Dataset Schema (Fact Table)
 
 ```
 Country Name        (string)
@@ -182,41 +182,137 @@ Year                (integer)
 CO2_Emissions_MT    (float, metric tons)
 ```
 
-* Grain: **Country–Year**
-* Unit: **Metric tons**
-* Aggregate-free
-* Power BI ready
+* **Grain:** Country–Year
+* **Aggregate-free**
+* **Safe for totals, trends, and comparisons**
 
 ---
 
-## 💾 Output Files
+## 🧱 Power BI Data Model (Star Schema)
+
+### Fact Table
+
+**fact_co2_emissions**
+
+* Country Code (FK)
+* Year (FK)
+* CO2_Emissions_MT (measure)
+
+### Dimension Tables
+
+**dim_country**
+
+* Country Code (PK)
+* Country Name
+
+**dim_year**
+
+* Year (PK)
+
+### Relationships
+
+* `dim_country[Country Code]` → `fact_co2_emissions[Country Code]`
+* `dim_year[Year]` → `fact_co2_emissions[Year]`
+
+✔ One-to-many
+✔ Single-direction
+✔ No dimension-to-dimension joins
+
+---
+
+## 📊 Dashboard Pages
+
+### 1️⃣ Overview
+
+* Total CO₂ emissions KPI
+* Global emissions trend (line)
+* Top 10 emitting countries (bar)
+* Global emissions map
+* Country & year slicers
+
+### 2️⃣ Country Profile
+
+* Country CO₂ total
+* Emissions trend over time
+* Share of global emissions
+* Global rank
+* Comparison with top emitters
+
+---
+
+## 🧮 Key DAX Measures
+
+```DAX
+Total CO2 (MT) =
+SUM ( fact_co2_emissions[CO2_Emissions_MT] )
+```
+
+```DAX
+World CO2 (MT) =
+CALCULATE (
+    [Total CO2 (MT)],
+    ALL ( dim_country )
+)
+```
+
+```DAX
+Country Share of World (%) =
+DIVIDE ( [Total CO2 (MT)], [World CO2 (MT)] )
+```
+
+```DAX
+Country Rank =
+RANKX (
+    ALL ( dim_country[Country Name] ),
+    [Total CO2 (MT)],
+    ,
+    DESC
+)
+```
+
+---
+
+## 🎨 Design & UX Principles
+
+* Minimal, environment-focused color palette
+* Clear hierarchy: KPIs → trends → comparisons
+* Synced slicers across pages
+* No implicit measures
+* No auto-date tables
+
+---
+
+## 💾 Repository Outputs
 
 * **`fact_co2_emissions_countries.csv`**
-  Clean fact table for Power BI
+  → Clean, aggregate-free fact table
 
-* **`dim_country.csv`** *(optional)*
-  Country dimension for slicers and relationships
+* **`dim_country.csv`** 
+  → Country dimension for slicers & relationships
 
----
-
-## 🧠 Intended Use
-
-* Power BI star-schema modeling
-* Dashboarding and KPI reporting
-* Trend and growth analysis
-* Country-level emissions comparison
+* **`global_co2_emissions.pbix`**
+  → Power BI dashboard file
 
 ---
 
-## ⚠️ Notes
+## 🚀 How to Use
 
-* No aggregation was performed during cleaning
-* All transformations are reversible and auditable
-* Cleaning logic follows **World Bank metadata conventions**
-* Dataset is safe for totals, averages, and time-series measures
+1. Open the `.pbix` file in Power BI Desktop
+2. Use slicers to filter by country and year
+3. Navigate between **Overview** and **Country Profile**
+4. Explore trends, rankings, and geographic patterns
 
 ---
 
-## ✅ Status
+## 🔮 Possible Extensions
 
-**Cleaning complete. Dataset is production-ready for Power BI.**
+* Per-capita CO₂ emissions (merge population data)
+* YoY growth measures
+* Policy-era annotations
+* Region-level drilldowns
+* Tooltip detail pages
+
+---
+
+
+Just say the word.
