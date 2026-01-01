@@ -305,4 +305,4 @@ RANKX (
 ---
 
 
-Just say the word.
+Just say the w
